@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "ctar.h"
 
 void syntaxError(char* argv[])
 {
@@ -19,18 +20,16 @@ int main(int argc, char* argv[])
     char* archiveName;
     extern int optind;
     extern char* optarg;
-    unsigned char aflag = 0;
-    unsigned char dflag = 0;
-    unsigned char eflag = 0;
-    unsigned char lflag = 0;
-    unsigned char errflag = 0;
+   	unsigned char multifile = 0;
 
     printf("argc: %i\n",argc);
-    printf("optarg: %s\n",optarg);
-    if (argc < 3) syntaxError(argv);
+    
+    /*if (argc < 3) syntaxError(argv);*/
     opt = getopt(argc, argv, "a:d:e:l:");
+    printf("optarg: %s\n",optarg);
         switch (opt) {
         case 'a':
+        	multifile = 1;
         	puts("append mode");
         	archiveName = optarg;
             break;
@@ -50,15 +49,13 @@ int main(int argc, char* argv[])
             syntaxError(argv);           
         }
     
-    if (errflag) syntaxError(argv);
-    printf("archiveName=%s\n optind=%d\n", archiveName, optind);
-
+   
     if (optind >= argc) {
         fprintf(stderr, "Expected argument after options\n");
         exit(1);
     }
 
-    printf("name argument = %s\n", argv[optind]);
+    printf("non-opt argument = %s\n", argv[optind]);
 
 
     /* Other code omitted */

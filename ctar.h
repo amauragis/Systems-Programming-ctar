@@ -1,5 +1,4 @@
 
-
 typedef struct
 {
 	int magic_number; 		/* CS3411 tar file */
@@ -11,3 +10,5 @@ typedef struct
 	char p_world;
 	char file_name[256];
 } hdr;
+
+void syntaxError(char* argv[]);
