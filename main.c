@@ -1,17 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include "ctar.h"
 
-void syntaxError(char* argv[])
-{
-	fprintf(stderr, "Usage: \t %s -a <archive file name> file1 file2 ... filen\n"
-                    "\t %s -d <archive file name> file\n"
-            		"\t %s -e <archive file name>\n"
-            		"\t %s -l <archive file name>\n",
-                    argv[0],argv[0],argv[0],argv[0]);
-    exit(1);
-}
 
 int main(int argc, char* argv[])
 {
@@ -20,31 +8,61 @@ int main(int argc, char* argv[])
     char* archiveName;
     extern int optind;
     extern char* optarg;
-   	unsigned char multifile = 0;
 
-    printf("argc: %i\n",argc);
+    /* contains the number of expected file arguments. */
+   	short int multifile;
+
+    /*printf("argc: %i\n",argc);*/
     
-    /*if (argc < 3) syntaxError(argv);*/
     opt = getopt(argc, argv, "a:d:e:l:");
-    printf("optarg: %s\n",optarg);
+    /*printf("optarg: %s\n",optarg);*/
         switch (opt) {
         case 'a':
-        	multifile = 1;
+        {
+        /* This is append mode, it takes the format 
+           ./ctar -a <archive file name> file1 file2 ... filen */   
+        	
+        	/* XXX: -3 used because we have <invocation> -a <archive> <file1> <file2> */
+        	int argIndex;
+        	multifile = argc - 3;
+        	char* filelist[multifile];
+        	printf("Files: ");
+        	for(argIndex = 3; argIndex < argc; argIndex++)
+        	{
+        		filelist[argIndex-3] = argv[argIndex];
+        		printf("%s ",argv[argIndex]);
+        	}
+        	printf("\n");
+
         	puts("append mode");
         	archiveName = optarg;
             break;
+	    }
         case 'd':
+        {
+        	if (argc != 4) syntaxError(argv);
+        	multifile = 1;
         	puts("delete mode");
+        	/*file = argv[3]*/
         	archiveName = optarg;
             break;
+		}
         case 'e':
+    	{
+        	if (argc != 3) syntaxError(argv);
+        	multifile = 0;
         	puts("extract mode");
         	archiveName = optarg;
             break;
+        }
         case 'l':
+        {
+        	if (argc != 3) syntaxError(argv);
+        	multifile = 0;
         	puts("list mode");
         	archiveName = optarg;
             break;
+        }
         default: /* '?' */
             syntaxError(argv);           
         }
@@ -55,10 +73,8 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    printf("non-opt argument = %s\n", argv[optind]);
+    /* printf("non-opt argument = %s\n", argv[optind]); */
 
-
-    /* Other code omitted */
 
     exit(0);
 }

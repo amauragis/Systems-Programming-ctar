@@ -1,7 +1,7 @@
 CC = gcc
 EXEC = ctar
 CCFLAGS = -Wall -g -ansi -pedantic
-OBJS = main.o
+OBJS = ctar.o main.o
 
 ${EXEC}: ${OBJS}
 	${CC} ${CCFLAGS} -lm -o ${EXEC} ${OBJS}
@@ -18,4 +18,4 @@ clean:
 test: ${EXEC}
 	valgrind ./${EXEC}
 
-#f.o: f.c f.h
+#ctar.o: ctar.c ctar.h
