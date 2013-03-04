@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
     int opt;
     char* archiveName;
     extern int optind;
-    extern char *optarg;
+    extern char* optarg;
     unsigned char aflag = 0;
     unsigned char dflag = 0;
     unsigned char eflag = 0;
@@ -26,28 +26,25 @@ int main(int argc, char* argv[])
     unsigned char errflag = 0;
 
     printf("argc: %i\n",argc);
+    printf("optarg: %s\n",optarg);
     if (argc < 3) syntaxError(argv);
     opt = getopt(argc, argv, "a:d:e:l:");
         switch (opt) {
         case 'a':
-        	if (dflag || eflag || lflag) errflag++;
-        	aflag++;
-            archiveName = optarg;
+        	puts("append mode");
+        	archiveName = optarg;
             break;
         case 'd':
-        	if (aflag || eflag || lflag) errflag++;
-        	dflag++;
-            archiveName = optarg;
+        	puts("delete mode");
+        	archiveName = optarg;
             break;
         case 'e':
-        	if (dflag || aflag || lflag) errflag++;
-        	eflag++;
-            archiveName = optarg;
+        	puts("extract mode");
+        	archiveName = optarg;
             break;
         case 'l':
-        	if (dflag || eflag || aflag) errflag++;
-        	lflag++;
-            archiveName = optarg;
+        	puts("list mode");
+        	archiveName = optarg;
             break;
         default: /* '?' */
             syntaxError(argv);           
