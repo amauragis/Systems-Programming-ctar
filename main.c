@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
     extern char* optarg;
 
     /* contains the number of expected file arguments. */
-   	short int multifile;
+    short int multifile;
 
     /*printf("argc: %i\n",argc);*/
     
@@ -21,46 +21,47 @@ int main(int argc, char* argv[])
         {
         /* This is append mode, it takes the format 
            ./ctar -a <archive file name> file1 file2 ... filen */   
-        	
-        	/* XXX: -3 used because we have <invocation> -a <archive> <file1> <file2> */
-        	int argIndex;
-        	multifile = argc - 3;
-        	char* filelist[multifile];
-        	printf("Files: ");
-        	for(argIndex = 3; argIndex < argc; argIndex++)
-        	{
-        		filelist[argIndex-3] = argv[argIndex];
-        		printf("%s ",argv[argIndex]);
-        	}
-        	printf("\n");
+            
+            /* XXX: -3 used because we have <invocation> -a <archive> <file1> <file2> */
+            int argIndex;
+            multifile = argc - 3;
+            char* filelist[multifile];
+            printf("Files: ");
+            for(argIndex = 3; argIndex < argc; argIndex++)
+            {
+                filelist[argIndex-3] = argv[argIndex];
+                printf("%s ",argv[argIndex]);
+            }
+            printf("\n");
 
-        	puts("append mode");
-        	archiveName = optarg;
+            puts("append mode");
+            archiveName = optarg;
+            openArchive(archiveName);
             break;
-	    }
+        }
         case 'd':
         {
-        	if (argc != 4) syntaxError(argv);
-        	multifile = 1;
-        	puts("delete mode");
-        	/*file = argv[3]*/
-        	archiveName = optarg;
+            if (argc != 4) syntaxError(argv);
+            multifile = 1;
+            puts("delete mode");
+            /*file = argv[3]*/
+            archiveName = optarg;
             break;
-		}
+        }
         case 'e':
-    	{
-        	if (argc != 3) syntaxError(argv);
-        	multifile = 0;
-        	puts("extract mode");
-        	archiveName = optarg;
+        {
+            if (argc != 3) syntaxError(argv);
+            multifile = 0;
+            puts("extract mode");
+            archiveName = optarg;
             break;
         }
         case 'l':
         {
-        	if (argc != 3) syntaxError(argv);
-        	multifile = 0;
-        	puts("list mode");
-        	archiveName = optarg;
+            if (argc != 3) syntaxError(argv);
+            multifile = 0;
+            puts("list mode");
+            archiveName = optarg;
             break;
         }
         default: /* '?' */
