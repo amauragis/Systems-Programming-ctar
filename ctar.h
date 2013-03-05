@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <stdint.h>
 
 typedef struct
 {
@@ -23,3 +24,4 @@ void syntaxError(char* argv[]);
 void notValidArchive(char* archPath);
 int openArchive(char* archPath);
 int calcMagicNumber(char file_name[256]);
+char* listArchive(int archFD);
