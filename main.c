@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 
                 puts("append mode");
                 archiveName = optarg;
-                archiveFD = openArchive(archiveName);
+                archiveFD = openArchive(archiveName, O_RDWR);
                 appendArchive(archiveFD, filelist, multifile);
 
                 break;
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
                 multifile = 0;
                 puts("list mode");
                 archiveName = optarg;
-                int archiveFD = openArchive(archiveName);
+                int archiveFD = openArchive(archiveName, O_RDONLY);
                 fileList = listArchive(archiveFD);
                 printf("%s",fileList);
                 free(fileList);
@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
             }
             default:
             { /* '?' */
-                /*syntaxError(argv);           */
+                syntaxError(argv);           
                 int magicnumber;
                 char file_name[256] = "chelseasucks.c";
                 magicnumber = calcMagicNumber(file_name);

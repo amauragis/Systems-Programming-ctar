@@ -2,10 +2,11 @@
 
 void syntaxError(char* argv[])
 {
-    fprintf(stderr, "Usage: \t %s -a <archive file name> file1 file2 ... filen\n"
-                    "\t %s -d <archive file name> file\n"
-                    "\t %s -e <archive file name>\n"
-                    "\t %s -l <archive file name>\n",
+    fprintf(stderr, "Usage:\n"
+                    "%s -a <archive file name> file1 file2 ... filen\n"
+                    "%s -d <archive file name> file\n"
+                    "%s -e <archive file name>\n"
+                    "%s -l <archive file name>\n",
                     argv[0],argv[0],argv[0],argv[0]);
     exit(1);
 }
@@ -32,15 +33,15 @@ int calcMagicNumber(char file_name[256])
 Tries to open the archive specified as archPath.  If an archive does not exist,
 create one.  If the file specified is not an archive, panic.
 */
-int openArchive(char* archPath)
+int openArchive(char* archPath, int flags)
 {
     int archFD;
-    archFD = open(archPath, O_RDWR);
+    archFD = open(archPath, flags);
 
     /* if we fail to open the file, try to create it */
     if (archFD == -1)
     {
-        archFD = open(archPath, O_RDWR|O_CREAT, 0644);
+        archFD = open(archPath, flags|O_CREAT, 0644);
         
         /* if we still can't create it, something is wrong */
         if (archFD == -1)
@@ -68,9 +69,8 @@ int openArchive(char* archPath)
         /* now we compare the magic number listed in the archive to the one we
            calculate ourselves.  If they don't match, it's not an archive */
         int magicnumber;
-        char file_name[256];
-        memcpy(file_name,buf->file_name,256);        
-        magicnumber = calcMagicNumber(file_name);
+              
+        magicnumber = calcMagicNumber(buf->file_name);
         /*printf("magic number: %i\n",magicnumber);*/
         if(buf->magic_number != magicnumber)
         {
@@ -132,13 +132,10 @@ void appendArchive(int archFD, char* fileList[], int listLen)
     {
         /* This is a freshly created archive */
         int index;
-        int currFileFD;
-        int currFileOwnPerm;
-        int currFileGroupPerm;
-        int currFileWorldPerm;
-        int currFilePerm;
 
-        /* go through and check to make sure no files share a name */
+        /* go through and check to make sure no files share a name here*/
+
+
         for (index = 0; index < listLen; index++)
         {
             currFileFD = open(fileList[index],O_RDONLY);
@@ -152,11 +149,20 @@ void appendArchive(int archFD, char* fileList[], int listLen)
                 fprintf(stderr,"couldn't stat file. OS is broken.\n");
                 exit(7);
             }
-            currFileOwnPerm = (statBuffer->st_mode) & S_IRWXU;
-            currFileGroupPerm = (statBuffer->st_mode) & S_IRWXG;
-            currFileWorldPerm = (statBuffer->st_mode) & S_IRWXO;
-            currFilePerm = currFileOwnPerm | currFileGroupPerm | currFileWorldPerm;
-            printf("Permissions for %s: %o\n",fileList[index],currFilePerm);
+
+            hdr_t fileheader;
+
+            char file_name[256];
+            memset(file_name, 0, 256);
+            strcpy(file_name,fileList[index]);  
+            memcpy(fileheader.file_name,file_name,256);
+            fileheader.magic_number = calcMagicNumber(file_name);
+            fileheader.file_size = statBuffer->st_size;
+            fileheader.deleted = 0;
+            fileheader.p_owner = ((statBuffer->st_mode) & S_IRWXU) >> 6;
+            fileheader.p_group = ((statBuffer->st_mode) & S_IRWXG) >> 3;
+            fileheader.p_world = (statBuffer->st_mode) & S_IRWXO;
+
 
         }
     }
