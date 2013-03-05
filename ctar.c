@@ -68,8 +68,7 @@ int openArchive(char* archPath)
            calculate ourselves.  If they don't match, it's not an archive */
         int magicnumber;
         char file_name[256];
-        memset(file_name,0,256);
-        strcpy(file_name,archPath);
+        memcpy(file_name,buf->file_name,256);        
         magicnumber = calcMagicNumber(file_name);
         /*printf("magic number: %i\n",magicnumber);*/
         if(buf->magic_number != magicnumber)
@@ -93,26 +92,34 @@ char* listArchive(int archFD)
     size_t listSize = 0;
     size_t listLen = 0;
     hdr_t* buf = malloc(sizeof(hdr_t));
-    /* try to read first header */
+    /* try to read all the headers, until we can't */
     while(0 != read(archFD, buf, sizeof(hdr_t)))
     {
+        /* grab length of string, add space for null terminator */
         int strLen = strlen(buf->file_name)+1;
-        if (strLen+listLen >= listSize)
-        {
-            fileList = realloc(fileList,listSize+256);
-        }
+
+        /* if we've run out of space for our list, we add 256 more bytes */
+        if (strLen+listLen >= listSize) fileList = realloc(fileList,listSize+256);
+        
+        /* copy the string to the list, then copy "\n" in after it */
         memcpy(fileList+listLen, buf->file_name,strLen);
         listLen += strLen;
         memcpy(fileList+listLen, "\n",1);
         listLen += 1;
 
+        /* move the file descriptor to the next header */
         if(-1 == lseek(archFD,buf->next_header,SEEK_SET))
         {
             fprintf(stderr,"lseek Failure");
             exit(4);
         }    
     }
+    /* put the file descriptor back */
     lseek(archFD,0,SEEK_SET);
     return fileList;
 }
 
+void appendArchive(int archFD, char* fileList[], int listLen)
+{
+
+}

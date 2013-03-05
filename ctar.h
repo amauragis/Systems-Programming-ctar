@@ -1,3 +1,6 @@
+#ifndef ctar_h
+#define ctar_h
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -25,3 +28,5 @@ void notValidArchive(char* archPath);
 int openArchive(char* archPath);
 int calcMagicNumber(char file_name[256]);
 char* listArchive(int archFD);
+
+#endif
