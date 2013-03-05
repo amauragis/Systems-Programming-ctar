@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
                 puts("append mode");
                 archiveName = optarg;
                 archiveFD = openArchive(archiveName);
+
                 break;
             }
             case 'd':
@@ -62,10 +63,14 @@ int main(int argc, char* argv[])
             case 'l':
             {
                 if (argc != 3) syntaxError(argv);
+                char* fileList;
                 multifile = 0;
                 puts("list mode");
                 archiveName = optarg;
-                /*archiveFD = openArchive(archiveName);*/
+                archiveFD = openArchive(archiveName);
+                fileList = listArchive(archiveFD);
+                printf("%s",fileList);
+                free(fileList);
 
                 break;
             }

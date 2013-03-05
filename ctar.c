@@ -103,6 +103,8 @@ char* listArchive(int archFD)
         }
         memcpy(fileList+listLen, buf->file_name,strLen);
         listLen += strLen;
+        memcpy(fileList+listLen, "\n",1);
+        listlen += 1;
 
         if(-1 == lseek(archFD,buf->next_header,SEEK_SET))
         {
