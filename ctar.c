@@ -96,15 +96,15 @@ char* listArchive(int archFD)
     /* try to read first header */
     while(0 != read(archFD, buf, sizeof(hdr_t)))
     {
-        strLen = strlen(buf->file_name)+1;
+        int strLen = strlen(buf->file_name)+1;
         if (strLen+listLen >= listSize)
         {
-            fileList = realloc(fileList,listSize+256)
+            fileList = realloc(fileList,listSize+256);
         }
         memcpy(fileList+listLen, buf->file_name,strLen);
         listLen += strLen;
         memcpy(fileList+listLen, "\n",1);
-        listlen += 1;
+        listLen += 1;
 
         if(-1 == lseek(archFD,buf->next_header,SEEK_SET))
         {
@@ -115,3 +115,4 @@ char* listArchive(int archFD)
     lseek(archFD,0,SEEK_SET);
     return fileList;
 }
+

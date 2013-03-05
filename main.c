@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
                 multifile = 0;
                 puts("list mode");
                 archiveName = optarg;
-                archiveFD = openArchive(archiveName);
+                int archiveFD = openArchive(archiveName);
                 fileList = listArchive(archiveFD);
                 printf("%s",fileList);
                 free(fileList);
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
                 char file_name[256] = "chelseasucks.c";
                 magicnumber = calcMagicNumber(file_name);
                 printf("%i\n",magicnumber);
-                printf("sizeof(int): %i\n",sizeof(int));
+                
             }   
         }
     
