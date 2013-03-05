@@ -45,11 +45,12 @@ int openArchive(char* archPath)
         /* if we still can't create it, something is wrong */
         if (archFD == -1)
         {
-            fprintf(stderr, "Cannot create archive '%s'",archPath);
+            fprintf(stderr, "Cannot create archive '%s'\n",archPath);
             exit(3);
         } 
 
-    }else
+    }
+    else
     /* otherwise, we check to make sure its a valid archive */
     {
         ssize_t bytesRead;
@@ -110,7 +111,7 @@ char* listArchive(int archFD)
         /* move the file descriptor to the next header */
         if(-1 == lseek(archFD,buf->next_header,SEEK_SET))
         {
-            fprintf(stderr,"lseek Failure");
+            fprintf(stderr,"lseek Failure\n");
             exit(4);
         }    
     }
@@ -121,5 +122,47 @@ char* listArchive(int archFD)
 
 void appendArchive(int archFD, char* fileList[], int listLen)
 {
+    stat_t* statBuffer = malloc(sizeof(stat_t));
+    if (0 != fstat(archFD,statBuffer))
+    {
+        fprintf(stderr,"couldn't stat archive. OS is broken.\n");
+        exit(5);
+    }
+    if(statBuffer->st_size == 0)
+    {
+        /* This is a freshly created archive */
+        int index;
+        int currFileFD;
+        int currFileOwnPerm;
+        int currFileGroupPerm;
+        int currFileWorldPerm;
+        int currFilePerm;
 
+        /* go through and check to make sure no files share a name */
+        for (index = 0; index < listLen; index++)
+        {
+            currFileFD = open(fileList[index],O_RDONLY);
+            if (currFileFD == -1)
+            {
+                fprintf(stderr,"Could not open '%s' reading.\n",fileList[index]);
+                exit(6);
+            }
+            if (0 != fstat(currFileFD,statBuffer))
+            {
+                fprintf(stderr,"couldn't stat file. OS is broken.\n");
+                exit(7);
+            }
+            currFileOwnPerm = (statBuffer->st_mode) & S_IRWXU;
+            currFileGroupPerm = (statBuffer->st_mode) & S_IRWXG;
+            currFileWorldPerm = (statBuffer->st_mode) & S_IRWXO;
+            currFilePerm = currFileOwnPerm | currFileGroupPerm | currFileWorldPerm;
+            printf("Permissions for %s: %o\n",fileList[index],currFilePerm);
+
+        }
+    }
+    else
+    {
+        /* this archive already has stuff in it */
+
+    }
 }

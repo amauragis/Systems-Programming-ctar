@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
                 puts("append mode");
                 archiveName = optarg;
                 archiveFD = openArchive(archiveName);
+                appendArchive(archiveFD, filelist, multifile);
 
                 break;
             }
