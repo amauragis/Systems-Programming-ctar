@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <string.h>
 
 typedef struct
 {
@@ -16,8 +17,9 @@ typedef struct
     char file_name[256];
 } hdr_t;
 
-typedef struct stat stat_t ;
+typedef struct stat stat_t;
 
 void syntaxError(char* argv[]);
-void notValidArchive(char* archPath)
+void notValidArchive(char* archPath);
 int openArchive(char* archPath);
+int calcMagicNumber(char file_name[256]);

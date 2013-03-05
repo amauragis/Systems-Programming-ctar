@@ -16,6 +16,19 @@ void notValidArchive(char* archPath)
     exit(2);
 }
 
+int calcMagicNumber(char file_name[256])
+{
+    int index;
+    long* wordarray = (long*)file_name;
+    int numwords = sizeof(file_name)/sizeof(long);
+    int magicnum = 0;
+    for (index = 0; index < numwords; index++)
+    {
+        magicnum = magicnum ^ wordarray[index];
+    }
+    return magicnum;
+}
+
 /*
 Tries to open the archive specified as archPath.  If an archive does not exist,
 create one.  If the file specified is not an archive, panic.
@@ -37,6 +50,12 @@ int openArchive(char* archPath)
         {
             notValidArchive(archPath);
         }
+        int magicnumber;
+        char file_name[256];
+        memset(file_name,0,256);
+        strcpy(file_name,archPath);
+        magicnumber = calcMagicNumber(file_name);
+        printf("magic number: %i\n",magicnumber);
     }
     printf("%s's FD: %i\n",archPath,archFD);
     
