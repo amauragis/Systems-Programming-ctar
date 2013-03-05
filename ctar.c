@@ -10,6 +10,12 @@ void syntaxError(char* argv[])
     exit(1);
 }
 
+void notValidArchive(char* archPath)
+{
+    fprintf(stderr, "'%s' is not a valid archive file.\n",archPath);
+    exit(2);
+}
+
 /*
 Tries to open the archive specified as archPath.  If an archive does not exist,
 create one.  If the file specified is not an archive, panic.
@@ -24,7 +30,13 @@ int openArchive(char* archPath)
         archFD = open(archPath, O_RDWR|O_CREAT, 0644);
     }else
     {
-        
+        ssize_t bytesRead;
+        stat_t* buf = malloc(sizeof(hdr_t));
+        bytesRead = read(archFD, buf, sizeof(hdr_t));
+        if (bytesRead != sizeof(hdr_t))
+        {
+            notValidArchive(archPath);
+        }
     }
     printf("%s's FD: %i\n",archPath,archFD);
     

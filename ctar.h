@@ -14,7 +14,10 @@ typedef struct
     char p_group;
     char p_world;
     char file_name[256];
-} hdr;
+} hdr_t;
+
+typedef struct stat stat_t ;
 
 void syntaxError(char* argv[]);
+void notValidArchive(char* archPath)
 int openArchive(char* archPath);
