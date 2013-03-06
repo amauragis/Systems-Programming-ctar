@@ -77,12 +77,14 @@ int openArchive(char* archPath, int flags)
             free(buf);
             notValidArchive(archPath);  
         } 
+        free(buf);
     }
     /*printf("%s's FD: %i\n",archPath,archFD);*/
 
     /* if we've made it to here without exiting, we have a valid file descriptor for
        the archive */
     lseek(archFD,0,SEEK_SET);
+
     return archFD;
     
 }
@@ -90,40 +92,28 @@ int openArchive(char* archPath, int flags)
 void listArchive(int archFD)
 {
     ssize_t bytesRead;
-    char* fileList = NULL;
     size_t listSize = 0;
     size_t listLen = 0;
-    hdr_t* buf = malloc(sizeof(hdr_t));
+    hdr_t buf;
     
     printf("Files currently in archive:\n---------------------------\n");
     /* try to read all the headers, until we can't */
-    while(0 != read(archFD, buf, sizeof(hdr_t)))
+    while(0 != read(archFD, &buf, sizeof(hdr_t)))
     {
-        /* grab length of string, add space for null terminator */
-        int strLen = strlen(buf->file_name)+1;
-
-        /* if we've run out of space for our list, we add 256 more bytes */
-        if (strLen+listLen >= listSize)
-        {
-            fileList = realloc(fileList,listSize+256);    
-        }
-        
-        /* copy the string to the list, then copy "\n" in after it */
-        if(buf->deleted != 1){
-            printf("%s\n",buf->file_name);
+        if(buf.deleted != 1){
+            printf("%s\n",buf.file_name);
         }        
                 
         /* move the file descriptor to the next header */
-        if(-1 == lseek(archFD,buf->next_header,SEEK_SET))
+        if(-1 == lseek(archFD,buf.next_header,SEEK_SET))
         {
-            fprintf(stderr,"lseek Failure\n");
+            fprintf(stderr,"lseek failure\n");
             exit(4);
         }    
     }
     /* put the file descriptor back */
-    lseek(archFD,0,SEEK_SET);
-    free(buf);
-    return fileList;
+    lseek(archFD,0,SEEK_SET);   
+    
 }
 
 void appendArchive(int archFD, char* fileList[], int listLen)
@@ -171,13 +161,14 @@ void appendArchive(int archFD, char* fileList[], int listLen)
             fileheader.p_world = (statBuffer->st_mode) & S_IRWXO;
             off_t currloc = lseek(archFD, 0, SEEK_CUR);
             fileheader.next_header = currloc + sizeof(hdr_t) + fileheader.file_size;
+            /*
             printf("sizeof(hdr_t): %i\n",sizeof(hdr_t));
             printf("file_size: %i\n",fileheader.file_size);
             printf("File: %s\n",fileList[index]);
             printf("Current Location: %i\n",currloc);
             printf("Next Location: %i\n",fileheader.next_header);
             puts("");
-
+            */
             if (0 >= write(archFD, &fileheader, sizeof(hdr_t)))
             {
                 fprintf(stderr, "Could not write to archive.\n");
