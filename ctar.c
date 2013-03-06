@@ -281,6 +281,7 @@ void appendArchive(int archFD, char* fileList[], int listLen)
         }
         lseek(archFD,0,SEEK_SET);
     }
+    free(statBuffer);
 }
 
 int deleteFromArchive(int archFD, char* file)
@@ -325,6 +326,18 @@ void extractArchive(int archFD)
         perms |= (buf.p_owner << 6);
         perms |= (buf.p_group << 3);
         perms |= (buf.p_world);
+        
+        if(buf.deleted == 1)
+        {
+            if(-1 == lseek(archFD,buf.next_header,SEEK_SET))
+                {
+                    fprintf(stderr,"lseek failure\n");
+                    exit(4);
+                }
+                
+            continue;   
+        }
+
         if(-1 != (fileFD = open(filename, O_WRONLY)))
         {
             char input[3];
@@ -334,7 +347,6 @@ void extractArchive(int archFD)
             if (0 != (strncmp("y",input,1)))
             {
                 /* move the file descriptor to the next header */
-                puts("skipping!");
                 if(-1 == lseek(archFD,buf.next_header,SEEK_SET))
                 {
                     fprintf(stderr,"lseek failure\n");
@@ -355,17 +367,34 @@ void extractArchive(int archFD)
         char filebuffer[4096];
         memset(filebuffer, 0, 4096);
         int bytesRead;
+        int failcount = 0;
         int readsize = ((buf.file_size) < 4096) ? buf.file_size : 4096;
-        do
+
+        if(readsize==4096)
         {
-            
+            int remainingfile = buf.file_size;
+
+            while(0 < (bytesRead = read(archFD, &filebuffer,(remainingfile < readsize) ? remainingfile : readsize)))
+            {
+                if (0 >= write(fileFD, &filebuffer, bytesRead))
+                {
+                    fprintf(stderr, "Could not write to file '%s'.\n",buf.file_name);
+                    exit(8); 
+                  
+                }
+                remainingfile -= readsize;
+            }
+        }
+        else
+        {
             bytesRead = read(archFD, &filebuffer, readsize );
             if (0 >= write(fileFD, &filebuffer, bytesRead))
             {
                 fprintf(stderr, "Could not write to file '%s'.\n",buf.file_name);
-                exit(8);
+                exit(8); 
+              
             }
-        }while ((bytesRead > 0) && (readsize == 4096));
+        }
 
         /* move the file descriptor to the next header */
         
