@@ -1,6 +1,8 @@
 #ifndef ctar_h
 #define ctar_h
 
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -29,5 +31,6 @@ int openArchive(char* archPath, int flags);
 int calcMagicNumber(char file_name[256]);
 void listArchive(int archFD);
 int deleteFromArchive(int archFD, char* file);
+void extractArchive(int archFD);
 
 #endif

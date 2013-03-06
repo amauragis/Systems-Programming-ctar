@@ -69,9 +69,11 @@ int main(int argc, char* argv[])
             case 'e':
             {
                 if (argc != 3) syntaxError(argv);
-                
-                
+                int archiveFD;            
                 archiveName = optarg;
+                archiveFD = openArchive(archiveName,O_RDONLY);
+                extractArchive(archiveFD);
+
                 break;
             }
             case 'l':

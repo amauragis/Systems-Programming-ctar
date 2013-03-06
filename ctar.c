@@ -92,8 +92,6 @@ int openArchive(char* archPath, int flags)
 void listArchive(int archFD)
 {
     ssize_t bytesRead;
-    size_t listSize = 0;
-    size_t listLen = 0;
     hdr_t buf;
     
     printf("Files currently in archive:\n---------------------------\n");
@@ -288,8 +286,6 @@ void appendArchive(int archFD, char* fileList[], int listLen)
 int deleteFromArchive(int archFD, char* file)
 {
     ssize_t bytesRead;
-    size_t listSize = 0;
-    size_t listLen = 0;
     hdr_t buf;
 
     while(0 != read(archFD, &buf, sizeof(hdr_t)))
@@ -314,4 +310,69 @@ int deleteFromArchive(int archFD, char* file)
     /* put the file descriptor back */
     lseek(archFD,0,SEEK_SET);
     return 1;
+}
+
+void extractArchive(int archFD)
+{
+    hdr_t buf;
+    int fileFD;
+    while(0 != read(archFD, &buf, sizeof(hdr_t)))
+    {
+        char* filename = buf.file_name;
+        int filesize = buf.file_size;
+        int perms;
+        perms |= (buf.p_owner << 6);
+        perms |= (buf.p_group << 3);
+        perms |= (buf.p_world);
+        if(-1 != (fileFD = open(filename, O_WRONLY)))
+        {
+            char input = 0;
+            /* this means that the file does already exist so we must check to overwrite */
+            printf("File '%s' already exists.  Do you wish to overwrite it? (y/N)",buf.file_name);
+            scanf("%c",&input);
+            if (input != 'y')
+            {
+                /* move the file descriptor to the next header */
+        
+                if(-1 == lseek(archFD,buf.next_header,SEEK_SET))
+                {
+                    fprintf(stderr,"lseek failure\n");
+                    exit(4);
+                }
+                continue;
+            }
+        }
+        else
+        {
+            fileFD = open(filename,O_WRONLY|O_CREAT,perms);
+        }
+        
+
+        char filebuffer[4096];
+        memset(filebuffer, 0, 4096);
+        int bytesRead;
+        int readsize = ((buf.file_size) < 4096) ? buf.file_size : 4096;
+        do
+        {
+            
+            bytesRead = read(archFD, &filebuffer, readsize );
+            if (0 >= write(fileFD, &filebuffer, bytesRead))
+            {
+                fprintf(stderr, "Could not write to file '%s'.\n",buf.file_name);
+                exit(8);
+            }
+        }while ((bytesRead > 0) && (readsize == 4096));
+
+        /* move the file descriptor to the next header */
+        
+        if(-1 == lseek(archFD,buf.next_header,SEEK_SET))
+        {
+            fprintf(stderr,"lseek failure\n");
+            exit(4);
+        }    
+        close(fileFD);
+    }
+    
+    /* put the file descriptor back */
+    lseek(archFD,0,SEEK_SET);
 }
