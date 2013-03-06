@@ -22,7 +22,8 @@ int main(int argc, char* argv[])
             {
             /* This is append mode, it takes the format 
                ./ctar -a <archive file name> file1 file2 ... filen */   
-               
+                if (argc < 4) syntaxError(argv);
+
                 int archiveFD; 
                 int argIndex;
                
@@ -64,15 +65,11 @@ int main(int argc, char* argv[])
             case 'l':
             {
                 if (argc != 3) syntaxError(argv);
-                char* fileList;
-                multifile = 0;
+                           
                 puts("list mode");
                 archiveName = optarg;
                 int archiveFD = openArchive(archiveName, O_RDONLY);
-                fileList = listArchive(archiveFD);
-                printf("%s",fileList);
-                free(fileList);
-
+                listArchive(archiveFD);
                 break;
             }
             default:
@@ -87,7 +84,7 @@ int main(int argc, char* argv[])
         }
     
    
-    if (optind >= argc) {
+    if (optind > argc) {
         fprintf(stderr, "Expected argument after options\n");
         exit(1);
     }

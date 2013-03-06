@@ -25,8 +25,8 @@ typedef struct stat stat_t;
 
 void syntaxError(char* argv[]);
 void notValidArchive(char* archPath);
-int openArchive(char* archPath);
+int openArchive(char* archPath, int flags);
 int calcMagicNumber(char file_name[256]);
-char* listArchive(int archFD);
+void listArchive(int archFD);
 
 #endif
