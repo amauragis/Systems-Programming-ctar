@@ -1,8 +1,9 @@
 #ifndef ctar_h
 #define ctar_h
 
-
-
+/*
+We'll just pile all the includes here for ease of use
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -23,8 +24,10 @@ typedef struct
     char file_name[256];
 } hdr_t;
 
+/* save us some effort */
 typedef struct stat stat_t;
 
+/* helper function prototypes */
 void syntaxError(char* argv[]);
 void notValidArchive(char* archPath);
 int openArchive(char* archPath, int flags);

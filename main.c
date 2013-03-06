@@ -1,3 +1,8 @@
+/*
+Andrew Mauragis
+Systems Programming Project 2
+1 Slip day used
+*/
 #include "ctar.h"
 
 
@@ -9,6 +14,7 @@ int main(int argc, char* argv[])
     extern int optind;
     extern char* optarg;
     
+    /* check for appropriate arguments */
     opt = getopt(argc, argv, "a:d:e:l:");
         switch (opt)
         {
@@ -54,6 +60,8 @@ int main(int argc, char* argv[])
             }
             case 'd':
             {
+                /* delete mode returns 1 if we can't delete the file, allowing the error
+                reporting out here. */
                 if (argc != 4) syntaxError(argv);
                 
                 char* file = argv[3];
@@ -68,6 +76,7 @@ int main(int argc, char* argv[])
             }
             case 'e':
             {
+                /* pretty simple. calls extract function */
                 if (argc != 3) syntaxError(argv);
                 int archiveFD;            
                 archiveName = optarg;
@@ -78,6 +87,7 @@ int main(int argc, char* argv[])
             }
             case 'l':
             {
+                /* list function */
                 if (argc != 3) syntaxError(argv);
                 
                 archiveName = optarg;
@@ -87,17 +97,19 @@ int main(int argc, char* argv[])
             }
             default:
             { /* '?' */
-                syntaxError(argv);           
+                syntaxError(argv);    
+                /* CODE BELOW HERE IS DEAD FOR TESTING        
                 int magicnumber;
                 char file_name[256] = "chelseasucks.c";
                 magicnumber = calcMagicNumber(file_name);
-                printf("%i\n",magicnumber);
+                printf("%i\n",magicnumber); */
                 
             }   
         }
     
    
     if (optind > argc) {
+        /* more command line checking */
         fprintf(stderr, "Expected argument after options\n");
         exit(1);
     }

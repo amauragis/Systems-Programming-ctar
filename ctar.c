@@ -1,5 +1,12 @@
+/*
+Andrew Mauragis
+Systems Programming Project 2
+1 Slip day used
+*/
+
 #include "ctar.h"
 
+/* helper function for pretty syntax error complaints */
 void syntaxError(char* argv[])
 {
     fprintf(stderr, "Usage:\n"
@@ -17,9 +24,12 @@ void notValidArchive(char* archPath)
     exit(2);
 }
 
+/* calcualtes the magic number as specified in the assignment */
 int calcMagicNumber(char file_name[256])
 {
     int index;
+    /* we use uint32s here because sizeof(int) is not guarenteed to be 4, and sizeof(long)
+    is 8 on 64 bit systems */
     uint32_t* wordarray = (uint32_t*)file_name;
     int magicnum = 0;
     for (index = 0; index < 64; index++)
@@ -89,6 +99,7 @@ int openArchive(char* archPath, int flags)
     
 }
 
+/* prints out a list of the contents of the archive */
 void listArchive(int archFD)
 {
     ssize_t bytesRead;
@@ -114,8 +125,12 @@ void listArchive(int archFD)
     
 }
 
+/* try to append items to an archive, or create the archive if we're pointing at
+an empty file */
 void appendArchive(int archFD, char* fileList[], int listLen)
 {
+    /* grab information about the archive, we want to see how big it is to
+    determine if this is freshly created or we need to append */
     stat_t* statBuffer = malloc(sizeof(stat_t));
     if (0 != fstat(archFD,statBuffer))
     {
@@ -128,6 +143,7 @@ void appendArchive(int archFD, char* fileList[], int listLen)
         int index;
         int currFileFD;
         
+        /* we iterate through every file in the file list (to be added to archive) */
         for (index = 0; index < listLen; index++)
         {
             currFileFD = open(fileList[index],O_RDONLY);
@@ -136,12 +152,15 @@ void appendArchive(int archFD, char* fileList[], int listLen)
                 fprintf(stderr,"Could not open '%s' reading.\n",fileList[index]);
                 exit(6);
             }
+
+            /* stat file for to fill header */
             if (0 != fstat(currFileFD,statBuffer))
             {
                 fprintf(stderr,"couldn't stat file. OS is broken.\n");
                 exit(7);
             }
 
+            /* here we create the header struct */
             hdr_t fileheader;
 
             char file_name[256];
@@ -156,19 +175,15 @@ void appendArchive(int archFD, char* fileList[], int listLen)
             fileheader.p_world = (statBuffer->st_mode) & S_IRWXO;
             off_t currloc = lseek(archFD, 0, SEEK_CUR);
             fileheader.next_header = currloc + sizeof(hdr_t) + fileheader.file_size;
-            /*
-            printf("sizeof(hdr_t): %i\n",sizeof(hdr_t));
-            printf("file_size: %i\n",fileheader.file_size);
-            printf("File: %s\n",fileList[index]);
-            printf("Current Location: %i\n",currloc);
-            printf("Next Location: %i\n",fileheader.next_header);
-            puts("");
-            */
+            
+            /* write the header struct to the archive */
             if (0 >= write(archFD, &fileheader, sizeof(hdr_t)))
             {
                 fprintf(stderr, "Could not write to archive.\n");
                 exit(8);
             }
+
+            /* now we copy the file into the archive (after the header) in 4k blocks*/
             int bytesRead;
             char buf[4096];
             while((bytesRead = read(currFileFD, &buf, 4096)) > 0)
@@ -182,6 +197,7 @@ void appendArchive(int archFD, char* fileList[], int listLen)
             close(currFileFD);
             
         }
+        /* put file descriptor back at top of file. we've had a problem here before */
         lseek(archFD,0,SEEK_SET);
     }
     else
@@ -192,8 +208,10 @@ void appendArchive(int archFD, char* fileList[], int listLen)
         
 
         hdr_t currheader;
+        /* we have to go through the existing part of the archive and scan for duplicates */
         while(0 != read(archFD, &currheader, sizeof(hdr_t)))
-        {
+        {   
+            /* this loop iterates through the files, the above while loop iterates through the archive */
             for (index = 0; index < listLen; index++)
             {
                 currFileFD = open(fileList[index],O_RDONLY);
@@ -208,7 +226,7 @@ void appendArchive(int archFD, char* fileList[], int listLen)
                     exit(7);
                 }
 
-                /*printf("CurrFile: %s\nfileList[index]: %s\n",currheader.file_name,fileList[index]);*/
+                /* compare current archive point with current file */
                 if(0 == strcmp(fileList[index],currheader.file_name))
                 {
                     fprintf(stderr, "Duplicate file '%s' detected.  "
@@ -225,6 +243,9 @@ void appendArchive(int archFD, char* fileList[], int listLen)
                        
             }
         }
+        /* this is just more of the same, once we verify that we don't have any duplicates
+        we create the proper header for each file, then copy it block-wise onto the end
+        of the archive */
         for (index = 0; index < listLen; index++)
         {
             currFileFD = open(fileList[index],O_RDONLY);
@@ -253,14 +274,7 @@ void appendArchive(int archFD, char* fileList[], int listLen)
             fileheader.p_world = (statBuffer->st_mode) & S_IRWXO;
             off_t currloc = lseek(archFD, 0, SEEK_CUR);
             fileheader.next_header = currloc + sizeof(hdr_t) + fileheader.file_size;
-            /*
-            printf("sizeof(hdr_t): %i\n",sizeof(hdr_t));
-            printf("file_size: %i\n",fileheader.file_size);
-            printf("File: %s\n",fileList[index]);
-            printf("Current Location: %i\n",currloc);
-            printf("Next Location: %i\n",fileheader.next_header);
-            puts("");
-            */
+            
             if (0 >= write(archFD, &fileheader, sizeof(hdr_t)))
             {
                 fprintf(stderr, "Could not write to archive.\n");
@@ -284,15 +298,18 @@ void appendArchive(int archFD, char* fileList[], int listLen)
     free(statBuffer);
 }
 
+/* "remove" a file from the archive (by setting the deleted flag) */
 int deleteFromArchive(int archFD, char* file)
 {
     ssize_t bytesRead;
     hdr_t buf;
 
+    /*check to make sure the file is actually in the archive */
     while(0 != read(archFD, &buf, sizeof(hdr_t)))
     {
         if(0 == strcmp(file,buf.file_name))
         {
+            /* once we know we have the file we need, we rewrite the header with the deleted flag */
             buf.deleted = 1;
             lseek(archFD, -1*(sizeof(hdr_t)) ,SEEK_CUR);
             write(archFD, &buf, sizeof(hdr_t));
@@ -313,13 +330,15 @@ int deleteFromArchive(int archFD, char* file)
     return 1;
 }
 
+/* extract files from an archive */
 void extractArchive(int archFD)
 {
     hdr_t buf;
     int fileFD;
-    
+    /* iterate through the files */
     while(0 != read(archFD, &buf, sizeof(hdr_t)))
     {
+        /* extract relevant data necessary to reconstruct the file */
         char* filename = buf.file_name;
         int filesize = buf.file_size;
         int perms;
@@ -327,6 +346,7 @@ void extractArchive(int archFD)
         perms |= (buf.p_group << 3);
         perms |= (buf.p_world);
         
+        /* if its deleted, skip this iteration (we don't want to extract a deleted file) */
         if(buf.deleted == 1)
         {
             if(-1 == lseek(archFD,buf.next_header,SEEK_SET))
@@ -338,12 +358,15 @@ void extractArchive(int archFD)
             continue;   
         }
 
+        /* open the file for writing only, if the if triggers, it exists already */
         if(-1 != (fileFD = open(filename, O_WRONLY)))
         {
             char input[3];
             /* this means that the file does already exist so we must check to overwrite */
             printf("File '%s' already exists.  Do you wish to overwrite it? (y/N) ",buf.file_name);
             fgets(input, 3, stdin);
+            
+            /* if we get 'y', overwrite, anything else, skip */
             if (0 != (strncmp("y",input,1)))
             {
                 /* move the file descriptor to the next header */
@@ -352,26 +375,31 @@ void extractArchive(int archFD)
                     fprintf(stderr,"lseek failure\n");
                     exit(4);
                 }
-                
                 continue;
             }
             
-            
         }
         else
-        {
+        {   
+            /* file does not exist, so create it */
             fileFD = open(filename,O_WRONLY|O_CREAT,perms);
         }
         
+        /* at this point we have the file created, now we fill it with crap */
 
         char filebuffer[4096];
         memset(filebuffer, 0, 4096);
         int bytesRead;
         int failcount = 0;
+
+        /* if we have a file smaller than our copy buffer, just copy the whole file */
         int readsize = ((buf.file_size) < 4096) ? buf.file_size : 4096;
 
         if(readsize==4096)
         {
+            /* this remainingfile nonsense is to prevent us from writing extra into a file
+            if it doesn't end up being perfectly divisible by 4k.  it basically allows the last
+            block to be smaller */
             int remainingfile = buf.file_size;
 
             while(0 < (bytesRead = read(archFD, &filebuffer,(remainingfile < readsize) ? remainingfile : readsize)))
@@ -387,6 +415,7 @@ void extractArchive(int archFD)
         }
         else
         {
+            /* we don't need a loop if the file is smaller than one block */
             bytesRead = read(archFD, &filebuffer, readsize );
             if (0 >= write(fileFD, &filebuffer, bytesRead))
             {

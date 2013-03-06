@@ -8,6 +8,14 @@ Tests that program was run against:
 
  Files that were larger than the append and extraction block size (4k) were tested to make sure large files didn't cause trouble.
 
+ Files that were large enough to cause segmentation faults caused implementation of the blocked copy
+
  valgrind was run on every option to ensure that no memory was leaked
 
  the magic number function output was compared to that of another student (we both entered the same seed into our function)
+
+ extracted files were compared with the originals (by inspection) for any damage to permission data.
+
+ Syscalls were checked for return values in case the OS breaks.
+
+ Garbage command line options were tested
