@@ -28,5 +28,6 @@ void notValidArchive(char* archPath);
 int openArchive(char* archPath, int flags);
 int calcMagicNumber(char file_name[256]);
 void listArchive(int archFD);
+int deleteFromArchive(int archFD, char* file);
 
 #endif

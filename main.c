@@ -8,14 +8,8 @@ int main(int argc, char* argv[])
     char* archiveName;
     extern int optind;
     extern char* optarg;
-
-    /* contains the number of expected file arguments. */
-    short int multifile;
-
-    /*printf("argc: %i\n",argc);*/
     
     opt = getopt(argc, argv, "a:d:e:l:");
-    /*printf("optarg: %s\n",optarg);*/
         switch (opt)
         {
             case 'a':
@@ -26,19 +20,32 @@ int main(int argc, char* argv[])
 
                 int archiveFD; 
                 int argIndex;
+
+                /* go through and check to make sure no files share a name here*/
+                int i;
+                for (i = 3; i < argc; i++)
+                {
+                    int j;
+                    for (j = i + 1; j < argc; j++)
+                    {                        
+                        if(0 == strcmp(argv[i],argv[j]))
+                        {
+                            fprintf(stderr,"Duplicate file '%s' detected.  "
+                                "Please do not add the same file twice.\n",argv[i]);
+                            exit(9);
+                        }
+                    }
+                }
                
                 /* XXX: -3 used because we have <invocation> -a <archive> <file1> <file2> */
-                multifile = argc - 3;
+                int multifile = argc - 3;
                 char* filelist[multifile];
-                printf("Files: ");
+                
                 for(argIndex = 3; argIndex < argc; argIndex++)
                 {
                     filelist[argIndex-3] = argv[argIndex];
-                    printf("%s ",argv[argIndex]);
-                }
-                printf("\n");
-
-                puts("append mode");
+                    
+                }                
                 archiveName = optarg;
                 archiveFD = openArchive(archiveName, O_RDWR);
                 appendArchive(archiveFD, filelist, multifile);
@@ -48,25 +55,29 @@ int main(int argc, char* argv[])
             case 'd':
             {
                 if (argc != 4) syntaxError(argv);
-                multifile = 1;
-                puts("delete mode");
-                /*file = argv[3]*/
+                
+                char* file = argv[3];
+                int archiveFD;
                 archiveName = optarg;
+                archiveFD = openArchive(archiveName, O_RDWR);
+                if (0 != deleteFromArchive(archiveFD, file))
+                {
+                    printf("Cannot delete file '%s' from archive.\n",file);
+                }
                 break;
             }
             case 'e':
             {
                 if (argc != 3) syntaxError(argv);
-                multifile = 0;
-                puts("extract mode");
+                
+                
                 archiveName = optarg;
                 break;
             }
             case 'l':
             {
                 if (argc != 3) syntaxError(argv);
-                           
-                puts("list mode");
+                
                 archiveName = optarg;
                 int archiveFD = openArchive(archiveName, O_RDONLY);
                 listArchive(archiveFD);
@@ -88,9 +99,6 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Expected argument after options\n");
         exit(1);
     }
-
-    /* printf("non-opt argument = %s\n", argv[optind]); */
-
 
     exit(0);
 }

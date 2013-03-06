@@ -130,9 +130,6 @@ void appendArchive(int archFD, char* fileList[], int listLen)
         int index;
         int currFileFD;
         
-        /* go through and check to make sure no files share a name here*/
-
-
         for (index = 0; index < listLen; index++)
         {
             currFileFD = open(fileList[index],O_RDONLY);
@@ -185,12 +182,136 @@ void appendArchive(int archFD, char* fileList[], int listLen)
                 }
             }
             close(currFileFD);
-
+            
         }
+        lseek(archFD,0,SEEK_SET);
     }
     else
     {
         /* this archive already has stuff in it */
+        int index;
+        int currFileFD;
+        
 
+        hdr_t currheader;
+        while(0 != read(archFD, &currheader, sizeof(hdr_t)))
+        {
+            for (index = 0; index < listLen; index++)
+            {
+                currFileFD = open(fileList[index],O_RDONLY);
+                if (currFileFD == -1)
+                {
+                    fprintf(stderr,"Could not open '%s' reading.\n",fileList[index]);
+                    exit(6);
+                }
+                if (0 != fstat(currFileFD,statBuffer))
+                {
+                    fprintf(stderr,"couldn't stat file. OS is broken.\n");
+                    exit(7);
+                }
+
+                /*printf("CurrFile: %s\nfileList[index]: %s\n",currheader.file_name,fileList[index]);*/
+                if(0 == strcmp(fileList[index],currheader.file_name))
+                {
+                    fprintf(stderr, "Duplicate file '%s' detected.  "
+                                    "Please do not add the same file twice.\n",fileList[index]);
+                    exit(9);
+                }
+
+                /* move the file descriptor to the next header */
+                if(-1 == lseek(archFD,currheader.next_header,SEEK_SET))
+                {
+                    fprintf(stderr,"lseek failure\n");
+                    exit(4);
+                }
+                       
+            }
+        }
+        for (index = 0; index < listLen; index++)
+        {
+            currFileFD = open(fileList[index],O_RDONLY);
+            if (currFileFD == -1)
+            {
+                fprintf(stderr,"Could not open '%s' reading.\n",fileList[index]);
+                exit(6);
+            }
+            if (0 != fstat(currFileFD,statBuffer))
+            {
+                fprintf(stderr,"couldn't stat file. OS is broken.\n");
+                exit(7);
+            }
+
+            hdr_t fileheader;
+
+            char file_name[256];
+            memset(file_name, 0, 256);
+            strcpy(file_name,fileList[index]);  
+            memcpy(fileheader.file_name,file_name,256);
+            fileheader.magic_number = calcMagicNumber(file_name);
+            fileheader.file_size = statBuffer->st_size;
+            fileheader.deleted = 0;
+            fileheader.p_owner = ((statBuffer->st_mode) & S_IRWXU) >> 6;
+            fileheader.p_group = ((statBuffer->st_mode) & S_IRWXG) >> 3;
+            fileheader.p_world = (statBuffer->st_mode) & S_IRWXO;
+            off_t currloc = lseek(archFD, 0, SEEK_CUR);
+            fileheader.next_header = currloc + sizeof(hdr_t) + fileheader.file_size;
+            /*
+            printf("sizeof(hdr_t): %i\n",sizeof(hdr_t));
+            printf("file_size: %i\n",fileheader.file_size);
+            printf("File: %s\n",fileList[index]);
+            printf("Current Location: %i\n",currloc);
+            printf("Next Location: %i\n",fileheader.next_header);
+            puts("");
+            */
+            if (0 >= write(archFD, &fileheader, sizeof(hdr_t)))
+            {
+                fprintf(stderr, "Could not write to archive.\n");
+                exit(8);
+            }
+            int bytesRead;
+            char buf[4096];
+            while((bytesRead = read(currFileFD, &buf, 4096)) > 0)
+            {
+                if (0 >= write(archFD, &buf, bytesRead))
+                {
+                    fprintf(stderr, "Could not write to archive.\n");
+                    exit(8);
+                }
+            }
+            close(currFileFD);
+            
+        }
+        lseek(archFD,0,SEEK_SET);
     }
+}
+
+int deleteFromArchive(int archFD, char* file)
+{
+    ssize_t bytesRead;
+    size_t listSize = 0;
+    size_t listLen = 0;
+    hdr_t buf;
+
+    while(0 != read(archFD, &buf, sizeof(hdr_t)))
+    {
+        if(0 == strcmp(file,buf.file_name))
+        {
+            buf.deleted = 1;
+            lseek(archFD, -1*(sizeof(hdr_t)) ,SEEK_CUR);
+            write(archFD, &buf, sizeof(hdr_t));
+            /* put the file descriptor back */
+            lseek(archFD,0,SEEK_SET);
+            return 0;
+        }        
+                
+        /* move the file descriptor to the next header */
+        if(-1 == lseek(archFD,buf.next_header,SEEK_SET))
+        {
+            fprintf(stderr,"lseek failure\n");
+            exit(4);
+        }    
+    }
+    /* put the file descriptor back */
+    lseek(archFD,0,SEEK_SET);
+    return 1;
 }
