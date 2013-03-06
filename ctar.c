@@ -316,6 +316,7 @@ void extractArchive(int archFD)
 {
     hdr_t buf;
     int fileFD;
+    
     while(0 != read(archFD, &buf, sizeof(hdr_t)))
     {
         char* filename = buf.file_name;
@@ -326,21 +327,24 @@ void extractArchive(int archFD)
         perms |= (buf.p_world);
         if(-1 != (fileFD = open(filename, O_WRONLY)))
         {
-            char input = 0;
+            char input[3];
             /* this means that the file does already exist so we must check to overwrite */
-            printf("File '%s' already exists.  Do you wish to overwrite it? (y/N)",buf.file_name);
-            scanf("%c",&input);
-            if (input != 'y')
+            printf("File '%s' already exists.  Do you wish to overwrite it? (y/N) ",buf.file_name);
+            fgets(input, 3, stdin);
+            if (0 != (strncmp("y",input,1)))
             {
                 /* move the file descriptor to the next header */
-        
+                puts("skipping!");
                 if(-1 == lseek(archFD,buf.next_header,SEEK_SET))
                 {
                     fprintf(stderr,"lseek failure\n");
                     exit(4);
                 }
+                
                 continue;
             }
+            
+            
         }
         else
         {
